@@ -13,6 +13,7 @@ class CoreConsumer(AsyncWebsocketConsumer):
             'JOIN_CAMERA': self.onJoinCamera,
             'CALL': self.onCall,
             'MESSAGE': self.onMessage,
+            'SDP_OFFER': self.onSDPOffer,
         }
 
         self.identifier = "";
@@ -22,13 +23,15 @@ class CoreConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard('default', self.channel_name)
+        await self.channel_layer.group_discard('camera', self.channel_name)
+        await self.channel_layer.group_discard('client', self.channel_name)
         await self.channel_layer.group_discard(self.identifier, self.channel_name)
         print('Disconnected: ' + self.identifier)
         pass
 
     async def receive(self, text_data):
         data = json.loads(text_data)
-        #print(data)
+        print(data)
         try:
             await self.commandsMapping[data['command']](data)
         except Exception as err:
@@ -52,6 +55,8 @@ class CoreConsumer(AsyncWebsocketConsumer):
         generated_uuid = uuid.uuid4().hex
         print('Client ' + generated_uuid + ' joined')
         self.identifier = generated_uuid
+        await self.channel_layer.group_add('client', self.channel_name)
+        await self.channel_layer.group_add(self.identifier, self.channel_name)
         await self.send(text_data=json.dumps({
             'command': 'JOINED_CLIENT',
             'identifier': generated_uuid
@@ -60,6 +65,7 @@ class CoreConsumer(AsyncWebsocketConsumer):
     async def onJoinCamera(self, data):
         ident = data['identifier']
         self.identifier = ident
+        await self.channel_layer.group_add('camera', self.channel_name)
         await self.channel_layer.group_add(self.identifier, self.channel_name)
         cam, created = Camera.objects.get_or_create(identifier=ident)
         print('Camera ' + cam.name + ': ' + cam.identifier + ' joined')
@@ -90,6 +96,26 @@ class CoreConsumer(AsyncWebsocketConsumer):
                 'command': 'MESSAGE',
                 'identifier': self.identifier,
                 'message': data['message']
+            }
+        })
+
+    async def onSDPOffer(self, data):
+        await self.channel_layer.group_send(data['identifier'], {
+            'type': 'sendMessage',
+            'message': {
+                'command': 'SDP_OFFER',
+                'identifier': self.identifier,
+                'offer': data['offer']
+            }
+        })
+
+    async def onSDPAnswer(self, data):
+        await self.channel_layer.group_send(data['identifier'], {
+            'type': 'sendMessage',
+            'message': {
+                'command': 'SDP_ANSWER',
+                'identifier': self.identifier,
+                'offer': data['offer']
             }
         })
 
