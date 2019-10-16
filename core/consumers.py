@@ -14,6 +14,7 @@ class CoreConsumer(AsyncWebsocketConsumer):
             'CALL': self.onCall,
             'MESSAGE': self.onMessage,
             'SDP_OFFER': self.onSDPOffer,
+            'ICE_OFFER': self.onSDPOffer,
         }
 
         self.identifier = "";
@@ -30,9 +31,10 @@ class CoreConsumer(AsyncWebsocketConsumer):
         pass
 
     async def receive(self, text_data):
-        data = json.loads(text_data)
-        print(data)
+        data = {}
         try:
+            data = json.loads(text_data)
+            print(data)
             await self.commandsMapping[data['command']](data)
         except Exception as err:
             print(type(err).__name__)
@@ -69,7 +71,7 @@ class CoreConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add(self.identifier, self.channel_name)
         cam, created = Camera.objects.get_or_create(identifier=ident)
         print('Camera ' + cam.name + ': ' + cam.identifier + ' joined')
-        await self.channel_layer.group_send('default', {
+        await self.channel_layer.group_send('client', {
             'type': 'sendCameraUpdate',
             'message': {
                 'command': 'UPDATE_CAMERAS',
