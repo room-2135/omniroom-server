@@ -14,7 +14,9 @@ class CoreConsumer(AsyncWebsocketConsumer):
             'CALL': self.onCall,
             'MESSAGE': self.onMessage,
             'SDP_OFFER': self.onSDPOffer,
-            'ICE_OFFER': self.onSDPOffer,
+            'SDP_ANSWER': self.onSDPAnswer,
+            'ICE_CANDIDATE': self.onICECandidate,
+            'ICE_ANSWER': self.onICEAnswer
         }
 
         self.identifier = "";
@@ -34,7 +36,8 @@ class CoreConsumer(AsyncWebsocketConsumer):
         data = {}
         try:
             data = json.loads(text_data)
-            print(data)
+            #print("From " + self.identifier + ":")
+            #print(data)
             await self.commandsMapping[data['command']](data)
         except Exception as err:
             print(type(err).__name__)
@@ -118,6 +121,26 @@ class CoreConsumer(AsyncWebsocketConsumer):
                 'command': 'SDP_ANSWER',
                 'identifier': self.identifier,
                 'offer': data['offer']
+            }
+        })
+
+    async def onICECandidate(self, data):
+        await self.channel_layer.group_send(data['identifier'], {
+            'type': 'sendMessage',
+            'message': {
+                'command': 'ICE_CANDIDATE',
+                'identifier': self.identifier,
+                'ice': data['ice']
+            }
+       })
+
+    async def onICEAnswer(self, data):
+        await self.channel_layer.group_send(data['identifier'], {
+            'type': 'sendMessage',
+            'message': {
+                'command': 'ICE_ANSWER',
+                'identifier': self.identifier,
+                'ice': data['ice']
             }
         })
 

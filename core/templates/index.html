@@ -14,7 +14,7 @@
                 "SERVER_ERROR": onServerError,
                 "MESSAGE": onMessage,
                 "SDP_OFFER": onSDPOffer,
-                "ICE_CANDIDATE": onICECanditate,
+                "ICE_CANDIDATE": onICECandidate,
             }
 
             var uuid;
@@ -86,12 +86,8 @@
                 console.debug("Offer: ")
                 console.debug(data["offer"]);
                 connections[data["identifier"]].setRemoteDescription(data["offer"]).then(() => {
-                    if (sdp.type != "offer")
+                    if (data["offer"].type != "offer")
                         return;
-                    while (ice_candidate_queue.length > 0) {
-                        var candidate = ice_candidate_queue.shift();
-                        connections[data["identifier"]].addIceCandidate(candidate);
-                    }
                     connections[data["identifier"]].createAnswer().then((desc) => {
                         connections[data["identifier"]].setLocalDescription(desc).then(function() {
                             sdp = {
@@ -99,15 +95,15 @@
                                 "identifier": data["identifier"],
                                 "offer": connections[data["identifier"]].localDescription
                             }
-                            ws_conn.send(JSON.stringify(sdp));
+                            socket.send(JSON.stringify(sdp));
                         });
                     });
                 });
             }
 
-            function onICECanditate(data) {
-                var candidate = new RTCIceCandidate(ice);
-                connections[data["identifier"]].addIceCandidate(candidate).catch(setError);
+            function onICECandidate(data) {
+                var candidate = new RTCIceCandidate(data['ice']);
+                connections[data["identifier"]].addIceCandidate(candidate).catch(onError);
             }
 
             //===========================STREAM=================================
@@ -140,27 +136,12 @@
                         console.log("ICE Candidate was null, done");
                         return;
                     }
-                    socket.send(JSON.stringify({"command": "CLIENT_MSG", "identifier": "test", "message": {"ice": event.candidate}}));
+                    socket.send(JSON.stringify({"command": "ICE_ANSWER", "identifier": "test", "ice": event.candidate}));
                 };
             }
 
             function getVideoElement() {
                 return document.getElementById("stream");
-            }
-
-            // SDP offer received from peer, set remote description and create an answer
-            function onIncomingSDP(sdp) {
-                connections[data["identifier"]].setRemoteDescription(sdp).then(() => {
-                    setStatus("Remote SDP set");
-                    if (sdp.type != "offer")
-                        return;
-                    setStatus("Got SDP offer");
-                    while (ice_candidate_queue.length > 0) {
-                        var candidate = ice_candidate_queue.shift();
-                        connections[data["identifier"]].addIceCandidate(candidate).catch(setError);
-                    }
-                    connections[data["identifier"]].createAnswer().then(onLocalDescription).catch(setError);
-                }).catch(setError);
             }
 
             // Local description was set, send it to peer
@@ -170,20 +151,6 @@
                     setStatus("Sending SDP answer");
                     socket.send(JSON.stringify({"command": "CLIENT_MSG", "camera": "test", "sdp": connections[data["identifier"]].localDescription}));
                 });
-            }
-
-            // ICE candidate received from peer, add it to the peer connection
-            function onIncomingICE(ice) {
-                var candidate = new RTCIceCandidate(ice);
-                /*
-                if(!connections[data["identifier"]]){
-                    // put candidate on queue
-                    ice_candidate_queue.push(candidate);
-                }
-                else {
-                    //connections[data["identifier"]].addIceCandidate(candidate).catch(setError);
-                }
-                */
             }
 
             const handleDataChannelOpen = (event) =>{
