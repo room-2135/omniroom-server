@@ -2,6 +2,7 @@
 import sys
 import uuid
 import json
+from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 from .models import *
@@ -36,8 +37,8 @@ class CoreConsumer(AsyncWebsocketConsumer):
         data = {}
         try:
             data = json.loads(text_data)
-            #print("From " + self.identifier + ":")
-            #print(data)
+            print("From " + self.identifier + ":")
+            print(data)
             await self.commandsMapping[data['command']](data)
         except Exception as err:
             print(type(err).__name__)
@@ -72,7 +73,8 @@ class CoreConsumer(AsyncWebsocketConsumer):
         self.identifier = ident
         await self.channel_layer.group_add('camera', self.channel_name)
         await self.channel_layer.group_add(self.identifier, self.channel_name)
-        cam, created = Camera.objects.get_or_create(identifier=ident)
+        print('test')
+        cam, created = await self.getOrCreateCamera(ident)
         print('Camera ' + cam.name + ': ' + cam.identifier + ' joined')
         await self.channel_layer.group_send('client', {
             'type': 'sendCameraUpdate',
@@ -152,3 +154,8 @@ class CoreConsumer(AsyncWebsocketConsumer):
 
     async def sendCameraUpdate(self, event):
         await self.send(text_data=json.dumps(event['message']))
+
+#========== Database access ==========
+    @database_sync_to_async
+    def getOrCreateCamera(self, ident):
+        return Camera.objects.get_or_create(identifier=ident)

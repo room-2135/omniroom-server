@@ -6,7 +6,18 @@
         <title>Omniroom</title>
     </head>
     <body>
-	    <video id="stream" autoplay playsinline>Your browser doesn"t support video</video>
+        <div class="navigation">
+            Rooms:
+            {% for room in rooms %}
+                {{ room.name }}
+            {% endfor %}
+        </div>
+        <div class="dashboard">
+            Cameras:
+            {% for camera in cameras %}
+                <video class="camera" autoplay playsinline camera="{{ camera.identifier }}">Your browser doesn"t support video</video>
+            {% endfor %}
+        </div>
         <script>
             var commandsMapping = {
                 "JOINED_CLIENT": onJoined,
@@ -66,14 +77,14 @@
             }
 
             function onJoined(data) {
-                identifier = data.identifier;
+                const identifier = data.identifier;
                 console.log("JOINED: " + identifier);
+                initCalls();
             }
 
             function onUpdateRequested(data) {
                 console.log("CAMERAS UPDATE REQUESTED");
-                createCall();
-                socket.send(JSON.stringify({"command": "CALL", "identifier": "test"}));
+                createCall(data["identifier"]);
             }
 
             function onMessage(data) {
@@ -91,10 +102,12 @@
                     connections[data["identifier"]].createAnswer().then((desc) => {
                         connections[data["identifier"]].setLocalDescription(desc).then(function() {
                             sdp = {
-                                "command": "SDP_ANSWER",
+                               "command": "SDP_ANSWER",
                                 "identifier": data["identifier"],
                                 "offer": connections[data["identifier"]].localDescription
                             }
+                            console.log("Sending SDP answer: ");
+                            console.log(connections[data["identifier"]].localDescription);
                             socket.send(JSON.stringify(sdp));
                         });
                     });
@@ -111,49 +124,53 @@
             var rtc_configuration = {iceServers: [{urls: "stun:stun.services.mozilla.com"},
                                                   {urls: "stun:stun.l.google.com:19302"}]};
 
-            function createCall() {
-                // Reset connection attempts because we connected successfully
-                connect_attempts = 0;
+            function initCalls() {
+                console.log("Initiating calls...");
+                const cameras = document.getElementsByClassName("camera");
+                for (var i = 0; i < cameras.length; i++) {
+                    const identifier = cameras[i].getAttribute("camera");
+                    createCall(identifier);
+                }
+            }
 
+            function createCall(identifier) {
                 console.log("Creating RTCPeerConnection");
 
-                var na = "test";
-
-                connections[na] = new RTCPeerConnection(rtc_configuration);
-                send_channel = connections[na].createDataChannel("label", null);
+                connections[identifier] = new RTCPeerConnection(rtc_configuration);
+                send_channel = connections[identifier].createDataChannel("label", null);
                 send_channel.onopen = handleDataChannelOpen;
                 send_channel.onmessage = handleDataChannelMessageReceived;
                 send_channel.onerror = handleDataChannelError;
-                send_channel.onclose = handleDataChannelClose;
-                connections[na].ondatachannel = onDataChannel;
-                connections[na].ontrack = onRemoteTrack;
-                /* Send our video/audio to the other peer */
-
-                connections[na].onicecandidate = (event) => {
-                    // We have a candidate, send it to the remote party with the
-                    // same uuid
+                connections[identifier].ondatachannel = onDataChannel;
+                connections[identifier].ontrack = (event) => {
+                    if (getVideoElement(identifier).srcObject !== event.streams[0]) {
+                        console.log("Incoming stream");
+                        getVideoElement(identifier).srcObject = event.streams[0];
+                    }
+                };
+                connections[identifier].onicecandidate = (event) => {
                     if (event.candidate == null) {
                         console.log("ICE Candidate was null, done");
                         return;
                     }
-                    socket.send(JSON.stringify({"command": "ICE_ANSWER", "identifier": "test", "ice": event.candidate}));
+                    socket.send(JSON.stringify({"command": "ICE_ANSWER", "identifier": identifier, "ice": event.candidate}));
                 };
+                console.log(socket);
+                socket.send(JSON.stringify({"command": "CALL", "identifier": identifier}));
             }
 
-            function getVideoElement() {
-                return document.getElementById("stream");
+            function getVideoElement(identifier) {
+                return document.querySelector(".camera[camera=" + identifier + "]");
             }
 
             // Local description was set, send it to peer
             function onLocalDescription(desc) {
-                console.log("Got local description: " + JSON.stringify(desc));
                 connections[data["identifier"]].setLocalDescription(desc).then(function() {
-                    setStatus("Sending SDP answer");
-                    socket.send(JSON.stringify({"command": "CLIENT_MSG", "camera": "test", "sdp": connections[data["identifier"]].localDescription}));
+                    socket.send(JSON.stringify({"command": "CLIENT_MSG", "camera": data["identifier"], "sdp": connections[data["identifier"]].localDescription}));
                 });
             }
 
-            const handleDataChannelOpen = (event) =>{
+            const handleDataChannelOpen = (event) => {
                 console.log("dataChannel.OnOpen", event);
             };
 

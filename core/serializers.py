@@ -9,5 +9,5 @@ class RoomSerializer(serializers.ModelSerializer):
 
 class CameraSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = ['id', 'mac_address', 'room', 'created_at', 'updated_at']
+        fields = ['id', 'identifier', 'room', 'created_at', 'updated_at']
         model = Camera

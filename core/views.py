@@ -4,8 +4,12 @@ from rest_framework import generics
 from .models import *
 from .serializers import *
 
-def index(request):
-    return render(request, "index.html")
+def index(request, identifier=Room.get_default()):
+    context = {
+        'rooms': Room.objects.all(),
+        'cameras': Camera.objects.filter(room=identifier).all()
+    }
+    return render(request, "index.html", context)
 
 class RoomsList(generics.ListAPIView):
     queryset = Room.objects.all()
@@ -22,3 +26,11 @@ class RoomsCreate(generics.CreateAPIView):
 class RoomsUpdate(generics.UpdateAPIView):
     queryset = Room.objects.all()
     serializer_class = RoomSerializer
+
+class CamerasList(generics.ListAPIView):
+    queryset = Camera.objects.all()
+    serializer_class = CameraSerializer
+
+class CamerasRetrieve(generics.RetrieveAPIView):
+    queryset = Camera.objects.all()
+    serializer_class = CameraSerializer
