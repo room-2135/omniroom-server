@@ -1,5 +1,4 @@
 {% load static %}
-<!-- core/templates/index.html -->
 <!DOCTYPE html>
 <html>
     <head>
@@ -7,6 +6,7 @@
         <title>Omniroom</title>
         <link rel="icon" href="data:;base64,iVBORw0KGgo=">
         <link rel="stylesheet" type="text/css" href="{% static "core/style.css" %}">
+        <link rel="stylesheet" type="text/css" href="{% static "core/loader.css" %}">
     </head>
     <body class="page">
         <div class="navigation">
@@ -16,9 +16,18 @@
         </div>
         <div class="board">
             {% for camera in cameras %}
-                <video class="camera" autoplay playsinline camera="{{ camera.identifier }}">Your browser doesn"t support video</video>
+                <div class="camera" identifier="{{ camera.identifier }}">
+                    <video class="camera__video" autoplay playsinline>
+                    </video>
+                    <div class="loader-wrapper">
+                        <div class="loader">
+                            <div></div><div></div><div></div><div></div>
+                        </div>
+                    </div>
+                </div>
             {% endfor %}
         </div>
         <script src="{% static "core/omniroom.js" %}"></script>
+        <script src="{% static "core/fullscreen.js" %}"></script>
     </body>
 </html>

@@ -12,9 +12,9 @@ var uuid;
 var connections = [];
 
 var socket;
-window.onload = function(){
+window.addEventListener("load", function(){
     connect();
-}
+});
 function connect() {
     socket = new WebSocket("ws://" + window.location.host);
 
@@ -85,8 +85,8 @@ function onSDPOffer(data) {
                     "identifier": data["identifier"],
                     "offer": connections[data["identifier"]].localDescription
                 }
-                console.log("Sending SDP answer: ");
-                console.log(connections[data["identifier"]].localDescription);
+                console.debug("Sending SDP answer: ");
+                console.debug(connections[data["identifier"]].localDescription);
                 socket.send(JSON.stringify(sdp));
             });
         });
@@ -107,7 +107,7 @@ function initCalls() {
     console.log("Initiating calls...");
     const cameras = document.getElementsByClassName("camera");
     for (var i = 0; i < cameras.length; i++) {
-        const identifier = cameras[i].getAttribute("camera");
+        const identifier = cameras[i].getAttribute("identifier");
         createCall(identifier);
     }
 }
@@ -124,6 +124,8 @@ function createCall(identifier) {
     connections[identifier].ontrack = (event) => {
         if (getVideoElement(identifier).srcObject !== event.streams[0]) {
             console.log("Incoming stream");
+            var loader = document.querySelector(".camera[identifier='" + identifier + "'] .loader-wrapper");
+            loader.parentNode.removeChild(loader);
             getVideoElement(identifier).srcObject = event.streams[0];
         }
     };
@@ -134,12 +136,11 @@ function createCall(identifier) {
         }
         socket.send(JSON.stringify({"command": "ICE_ANSWER", "identifier": identifier, "ice": event.candidate}));
     };
-    console.log(socket);
     socket.send(JSON.stringify({"command": "CALL", "identifier": identifier}));
 }
 
 function getVideoElement(identifier) {
-    return document.querySelector(".camera[camera=" + identifier + "]");
+    return document.querySelector(".camera[identifier='" + identifier + "'] .camera__video");
 }
 
 // Local description was set, send it to peer
@@ -176,17 +177,10 @@ const handleDataChannelClose = (event) =>{
 };
 
 function onDataChannel(event) {
-    setStatus("Data channel created");
+    console.log("Incoming data channel");
     let receiveChannel = event.channel;
     receiveChannel.onopen = handleDataChannelOpen;
     receiveChannel.onmessage = handleDataChannelMessageReceived;
     receiveChannel.onerror = handleDataChannelError;
     receiveChannel.onclose = handleDataChannelClose;
-}
-
-function onRemoteTrack(event) {
-    if (getVideoElement().srcObject !== event.streams[0]) {
-        console.log("Incoming stream");
-        getVideoElement().srcObject = event.streams[0];
-    }
 }
