@@ -4,10 +4,11 @@ from rest_framework import generics
 from .models import *
 from .serializers import *
 
-def index(request, identifier=Room.get_default()):
+def index(request, identifier=Room.get_default().id):
     context = {
+        'identifier': int(identifier),
         'rooms': Room.objects.all(),
-        'cameras': Camera.objects.filter(room=identifier).all()
+        'cameras': Camera.objects.filter(room=int(identifier)).all()
     }
     return render(request, "index.html", context)
 

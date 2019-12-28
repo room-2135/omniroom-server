@@ -39,6 +39,9 @@ a {
 .room-selected {
   color: white;
   background-color: #101C2F;
+  -webkit-box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.5);
+  -moz-box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.5);
+  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.5);
 }
 
 .board {
@@ -63,11 +66,14 @@ a {
   margin: 15px;
   flex-grow: 1;
   max-width: 800px;
-  cursor: zoom-in;
 }
 
 .camera__video {
+  -webkit-box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.5);
+  -moz-box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.5);
+  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.5);
   background-color: #2F3139;
+  cursor: zoom-in;
 }
 
 .camera__video:-webkit-full-screen {

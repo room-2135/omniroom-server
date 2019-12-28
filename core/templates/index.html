@@ -5,13 +5,13 @@
         <meta charset="utf-8"/>
         <title>Omniroom</title>
         <link rel="icon" href="data:;base64,iVBORw0KGgo=">
-        <link rel="stylesheet" type="text/css" href="{% static "core/style.css" %}">
-        <link rel="stylesheet" type="text/css" href="{% static "core/loader.css" %}">
+        <link rel="stylesheet" type="text/css" href="{% static "css/style.css" %}">
+        <link rel="stylesheet" type="text/css" href="{% static "css/loader.css" %}">
     </head>
     <body class="page">
         <div class="navigation">
             {% for room in rooms %}
-                <a href="{% url "room" room.id %}">{{ room.name }}</a>
+            <a class="room{% if room.id == identifier %} room-selected{% endif %}" href="{% url "room" room.id %}">{{ room.name }}</a>
             {% endfor %}
         </div>
         <div class="board">
@@ -27,7 +27,7 @@
                 </div>
             {% endfor %}
         </div>
-        <script src="{% static "core/omniroom.js" %}"></script>
-        <script src="{% static "core/fullscreen.js" %}"></script>
+        <script src="{% static "script/omniroom.js" %}"></script>
+        <script src="{% static "script/fullscreen.js" %}"></script>
     </body>
 </html>
