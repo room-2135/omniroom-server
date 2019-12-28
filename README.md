@@ -16,3 +16,6 @@ pip install django-sass
 ./manage.py runserver 0.0.0.0:8000
 ```
 opening http://localhost:8000
+
+# Screenshot
+![Default room](screenshot.png)
