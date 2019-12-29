@@ -73,7 +73,6 @@ class CoreConsumer(AsyncWebsocketConsumer):
         self.identifier = ident
         await self.channel_layer.group_add('camera', self.channel_name)
         await self.channel_layer.group_add(self.identifier, self.channel_name)
-        print('test')
         cam, created = await self.getOrCreateCamera(ident)
         print('Camera ' + cam.name + ': ' + cam.identifier + ' joined')
         await self.channel_layer.group_send('client', {

@@ -113,8 +113,7 @@ function initCalls() {
 }
 
 function createCall(identifier) {
-    console.log("Creating RTCPeerConnection");
-
+    console.log("Calling: " + identifier);
     connections[identifier] = new RTCPeerConnection(rtc_configuration);
     send_channel = connections[identifier].createDataChannel("label", null);
     send_channel.onopen = handleDataChannelOpen;
