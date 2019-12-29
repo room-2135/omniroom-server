@@ -4,11 +4,13 @@ from rest_framework import generics
 from .models import *
 from .serializers import *
 
-def index(request, identifier=Room.get_default().id):
+def index(request, identifier=None):
+    default_room = Room.get_default()
+    selected_identifier = int(identifier) if (identifier is not None) else default_room.id
     context = {
-        'identifier': int(identifier),
+        'identifier': selected_identifier,
         'rooms': Room.objects.all(),
-        'cameras': Camera.objects.filter(room=int(identifier)).all()
+        'cameras': Camera.objects.filter(room=selected_identifier).all()
     }
     return render(request, "index.html", context)
 
