@@ -83,10 +83,10 @@ function onSDPOffer(data) {
                 sdp = {
                    "command": "SDP_ANSWER",
                     "identifier": data["identifier"],
-                    "offer": connections[data["identifier"]].localDescription
+                    "offer": desc
                 }
                 console.debug("Sending SDP answer: ");
-                console.debug(connections[data["identifier"]].localDescription);
+                console.debug(desc);
                 socket.send(JSON.stringify(sdp));
             });
         });
@@ -124,7 +124,9 @@ function createCall(identifier) {
         if (getVideoElement(identifier).srcObject !== event.streams[0]) {
             console.log("Incoming stream");
             var loader = document.querySelector(".camera[identifier='" + identifier + "'] .loader-wrapper");
-            loader.parentNode.removeChild(loader);
+            if(loader) {
+                loader.parentNode.removeChild(loader);
+            }
             getVideoElement(identifier).srcObject = event.streams[0];
         }
     };
